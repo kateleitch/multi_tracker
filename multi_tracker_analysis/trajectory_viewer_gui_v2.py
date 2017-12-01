@@ -13,7 +13,7 @@ import numpy as np
 
 import read_hdf5_file_to_pandas
 import data_slicing
-import find_flies_in_image_directory
+#import find_flies_in_image_directory # will and kate commented this out 2017_11_17 
 
 import matplotlib.pyplot as plt
 
@@ -804,6 +804,10 @@ class QTrajectory(TemplateBaseClass):
                 t_elapsed = tfloat - t0
                 t_total = timerange[1] - timerange[0]
                 s = int(100*(t_elapsed / t_total))
+		# WBD - fix bug ??
+		# -------------------------------------------
+		s = max(min(s,100),0)
+		# -------------------------------------------
                 pbar.update(s)
             else:
                 t0 = tfloat

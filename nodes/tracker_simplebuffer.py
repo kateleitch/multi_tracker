@@ -139,10 +139,13 @@ class Tracker:
         self.imgScaled = img[self.params['roi_b']:self.params['roi_t'], self.params['roi_l']:self.params['roi_r']]
         self.shapeImage = self.imgScaled.shape # (height,width)
         
+        # WBD: temp
+        # ----------------------------------------------------------------------------------
         if self.backgroundImage is not None:
-            if self.backgroundImage.shape != self.imgScaled.shape:
+            if (self.backgroundImage.shape[0] != self.imgScaled.shape[0]) and (self.backgroundImage.shape[1] != self.imgScaled.shape[1]):
                 self.backgroundImage = None
                 self.reset_background_flag = True
+        # ----------------------------------------------------------------------------------
         
 ########### Call to image processing function ##############################################################
         self.process_image() # must be defined seperately - see "main" code at the bottom of this script

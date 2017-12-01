@@ -37,6 +37,17 @@ else:
 #######################
 
 def incredibly_basic(self):
+
+    # WBD: 
+    # --------------------------------------------------------------------------
+    # Need to convert to gray scale before threshold
+    # Doesn't really work because backgroundImage keeps getting reset as shape 
+    # doesn't match in Tracker process_image_buffer
+    # --------------------------------------------------------------------------
+    if len(self.imgScaled.shape) == 3: 
+        self.imgScaled = np.uint8(cv2.cvtColor(self.imgScaled,cv2.COLOR_BGR2GRAY))
+    # --------------------------------------------------------------------------
+
     # If there is no background image, grab one, and move on to the next frame
     if self.backgroundImage is None:
         reset_background(self)
@@ -45,12 +56,18 @@ def incredibly_basic(self):
         reset_background(self)
         self.reset_background_flag = False
         return
-      
+
+
     self.absdiff = cv2.absdiff(np.float32(self.imgScaled), self.backgroundImage)
     self.imgproc = copy.copy(self.imgScaled)
-    
+
+    # WBD: 
+    # ---------------------------------------------------------------------------
+    # Image needs to grayscale for thresholding
+    # ---------------------------------------------------------------------------
     retval, self.threshed = cv2.threshold(self.absdiff, self.params['threshold'], 255, 0)
-    
+
+    # WBD: don't need this any more??
     # convert to gray if necessary
     if len(self.threshed.shape) == 3:
         self.threshed = np.uint8(cv2.cvtColor(self.threshed, cv2.COLOR_BGR2GRAY))
@@ -81,7 +98,7 @@ def incredibly_basic(self):
             
             data = Contourinfo()
             data.header  = header
-            data.dt      = dtCamera
+            data.dt      = self.dtCamera  # WBD BUG, changed to self.dtCamera (from dtCamera)
             data.x       = x
             data.y       = y
             data.area    = area
@@ -300,6 +317,18 @@ def dark_or_light_objects(self):
     dark_or_light_objects_only(self, color='darkorlight')
 
 def dark_or_light_objects_only(self, color='dark'):
+    # WBD: 
+    # --------------------------------------------------------------------------
+    # Need to convert to gray scale before threshold
+    # Doesn't really work because backgroundImage keeps getting reset as shape 
+    # doesn't match in Tracker process_image_buffer
+    # --------------------------------------------------------------------------
+    if len(self.imgScaled.shape) == 3: 
+        self.imgScaled = np.uint8(cv2.cvtColor(self.imgScaled,cv2.COLOR_BGR2GRAY))
+    # --------------------------------------------------------------------------
+
+
+
     if self.params['circular_mask_x'] != 'none':
         if self.image_mask is None:
             self.image_mask = np.zeros_like(self.imgScaled)
@@ -330,9 +359,14 @@ def dark_or_light_objects_only(self, color='dark'):
         if t-self.medianbgimages_times[-1] > self.params['medianbgupdateinterval']:
             self.medianbgimages.append(self.imgScaled)
             self.medianbgimages_times.append(t)
-        if len(self.medianbgimages) > 3:
+    # WBD: 
+    # ---------------------------------------------------------------------------
+    # consider changing number of median images from 3 to something somewhat arbitrarily larger
+    # ---------------------------------------------------------------------------
+	if len(self.medianbgimages) > 3:
             self.backgroundImage = copy.copy(np.float32(np.median(self.medianbgimages, axis=0)))
             self.medianbgimages.pop(0)
+	    print 'time of last medianbg image: ' + str(self.medianbgimages_times[-1])
             self.medianbgimages_times.pop(0)
             print 'reset background with median image'
 
@@ -343,6 +377,10 @@ def dark_or_light_objects_only(self, color='dark'):
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kern_d,kern_d))
         self.kernel = kernel
     
+    #rospy.logwarn('imgScaled.shape {0}'.format(self.imgScaled.shape))	
+    #rospy.logwarn('backgroundImage.shape {0}'.format(self.backgroundImage.shape))
+
+
     if color == 'dark':
         self.threshed = cv2.compare(np.float32(self.imgScaled), self.backgroundImage-self.params['threshold'], cv2.CMP_LT) # CMP_LT is less than
     elif color == 'light':
